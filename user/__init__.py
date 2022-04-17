@@ -1,5 +1,8 @@
-from .api import Registration
+from .api import Registration, Activate, Login, Logout
 
 user_routes = [
-    (Registration, '/register')
+    (Registration, '/register'),
+    (Activate, '/activate'),
+    (Login, '/login'),
+    (Logout, '/logout')
 ]
