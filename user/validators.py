@@ -81,3 +81,18 @@ def validate_change_pass(body):
         return exception.__dict__
     except Exception as e:
         return {'Error': str(e), 'Code': 500}
+
+
+def validate_set_password(body):
+    try:
+        new_password = body.get('new_password')
+        conf_new_pass = body.get('conf_new_password')
+        user_id = body.get('user_id')
+        if not new_password and not conf_new_pass:
+            raise NullValue('You have to enter all values', 409)
+        if new_password != conf_new_pass:
+            raise InternalError('Confirm your password correctly', 409)
+    except NullValue as exception:
+        return exception.__dict__
+    except InternalError as exception:
+        return exception.__dict__

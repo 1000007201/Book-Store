@@ -1,8 +1,9 @@
 from flask_restful import Resource
 from flask import request, json, render_template, session
 from .model import Users
-from .validators import validate_register, validate_login, validate_change_pass
-from .utils import get_otp, send_mail, get_token, token_short, token_required
+from .validators import validate_register, validate_login, validate_change_pass, validate_set_password
+from .utils import get_otp, send_mail, get_token, token_short, token_required, get_token1, token_required1
+from common.custom_validations import NotFound
 
 
 class Registration(Resource):
@@ -112,3 +113,44 @@ class ChangePassword(Resource):
         return {'Message': 'Password Changed', 'Code': 200}
 
 
+class ForgetPassword(Resource):
+    def post(self):
+        """
+        Send mail to registered email id of user
+        :return: message and status code
+        """
+        req_data = request.data
+        body = json.loads(req_data)
+        user_id = body.get('user_id')
+        try:
+            user = Users.objects.filter(id=user_id).first()
+            if not user:
+                raise NotFound('User not found!!', 404)
+            email = user.email
+            token = get_token1(user_id)
+            short_token = token_short(token)
+            token_url = r'http://127.0.0.1:90/password/set?token='+f'{short_token}'
+            template = render_template('forget.html', data=token_url)
+            send_mail(template, email)
+            return {'Message': 'Email is sent to your registered Email', 'Code': 200}
+        except NotFound as exception:
+            return exception.__dict__
+        except Exception as e:
+            return {'Error': str(e), 'Code': 500}
+
+
+class SetPassword(Resource):
+    method_decorators = {'patch': [token_required1]}
+
+    def patch(self, user_id):
+        req_data = request.data
+        body = json.loads(req_data)
+        validated_data = validate_set_password(body)
+        if validated_data:
+            return validated_data
+        try:
+            user = Users.objects.filter(id=user_id).first()
+            user.update(password=body.get('new_password'))
+            return {'Message': 'Password Updated', 'Code': 200}
+        except Exception as e:
+            return {'Error': str(e), 'Code': 500}
