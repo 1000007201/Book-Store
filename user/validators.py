@@ -1,5 +1,6 @@
 from .model import Users
 from common.custom_validations import NullValue, AlreadyExist, InternalError, NotFound
+from flask import session
 
 
 def validate_register(body):
@@ -37,6 +38,8 @@ def validate_register(body):
         return exception.__dict__
     except InternalError as exception:
         return exception.__dict__
+    except Exception as e:
+        return {'Error': str(e), 'Code': 500}
 
 
 def validate_login(body):
@@ -49,9 +52,32 @@ def validate_login(body):
         if user.password != password:
             raise NotFound('Please Enter correct password!!', 404)
         if not user.is_active:
-            return {'Error-Active': 'Your account is not active yet', 'Code': 409, 'user_id': user.id}
+            return {'Error-Active': 'Your account is not active yet', 'Code': 409, 'user_id': user.id, 'email': user.email}
         return {'user_id': user.id}
     except NullValue as exception:
         return exception.__dict__
     except NotFound as exception:
         return exception.__dict__
+    except Exception as e:
+        return {'Error': str(e), "Code": 500}
+
+
+def validate_change_pass(body):
+    try:
+        old_password = body.get('old_password')
+        new_password = body.get('new_password')
+        conf_new_pass = body.get('conf_new_password')
+        if not old_password and not new_password and not conf_new_pass:
+            raise NullValue('You have to enter all values', 409)
+        if new_password != conf_new_pass:
+            raise InternalError('Confirm your new password correctly', 409)
+        user = Users.objects.filter(id=session['user_id']).first()
+        if user.password != old_password:
+            raise InternalError('Check your old password', 409)
+        return {'user_instance': user}
+    except NullValue as exception:
+        return exception.__dict__
+    except InternalError as exception:
+        return exception.__dict__
+    except Exception as e:
+        return {'Error': str(e), 'Code': 500}
