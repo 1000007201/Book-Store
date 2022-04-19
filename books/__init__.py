@@ -1,5 +1,7 @@
-from .api import AddBooks
+from .api import AddBooks, ViewBooks, DeleteBook
 
 book_routes = [
-    (AddBooks, '/add/books')
+    (AddBooks, '/add/books'),
+    (ViewBooks, '/view/books'),
+    (DeleteBook, '/delete/book/<book_id>')
 ]
