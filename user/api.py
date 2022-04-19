@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask import request, json, render_template, session
 from .model import Users
 from .validators import validate_register, validate_login, validate_change_pass, validate_set_password
-from .utils import get_otp, send_mail, get_token, token_short, token_required, get_token1, token_required1
+from .utils import get_otp, send_mail, get_token, token_short, token_required
 from common.custom_validations import NotFound
 
 
@@ -22,7 +22,7 @@ class Registration(Resource):
             user = Users(**body)
             user.save()
             otp = get_otp()
-            token = get_token(otp, user.id)
+            token = get_token(user.id, otp)
             short_token = token_short(token)
             token_url = r"http://127.0.0.1:90/activate?token=" + f"{short_token}"
             template = render_template('index.html', data={'otp': otp, 'token_url': token_url})
@@ -47,7 +47,7 @@ class Login(Resource):
                 return validated_data
             if 'Error-Active' in validated_data:
                 otp = get_otp()
-                token = get_token(otp, validated_data['user_id'])
+                token = get_token(validated_data['user_id'], otp)
                 short_token = token_short(token)
                 token_url = r"http://127.0.0.1:90/activate?token=" + f"{short_token}"
                 template = render_template('index.html', data={'otp': otp, 'token_url': token_url})
@@ -127,7 +127,7 @@ class ForgetPassword(Resource):
             if not user:
                 raise NotFound('User not found!!', 404)
             email = user.email
-            token = get_token1(user_id)
+            token = get_token(user_id)
             short_token = token_short(token)
             token_url = r'http://127.0.0.1:90/password/set?token='+f'{short_token}'
             template = render_template('forget.html', data=token_url)
@@ -140,7 +140,7 @@ class ForgetPassword(Resource):
 
 
 class SetPassword(Resource):
-    method_decorators = {'patch': [token_required1]}
+    method_decorators = {'patch': [token_required]}
 
     def patch(self, user_id):
         req_data = request.data

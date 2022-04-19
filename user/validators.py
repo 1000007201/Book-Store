@@ -87,7 +87,6 @@ def validate_set_password(body):
     try:
         new_password = body.get('new_password')
         conf_new_pass = body.get('conf_new_password')
-        user_id = body.get('user_id')
         if not new_password and not conf_new_pass:
             raise NullValue('You have to enter all values', 409)
         if new_password != conf_new_pass:
